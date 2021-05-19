@@ -44,12 +44,23 @@ void copiar(string nombre1, string nombre2)
 		file2<<str<<endl;
 	}
 }
+int get_number(string s)
+{
+	int t = s.size();
+	string tmp;
+	for(int i = 1; i<t; i++)
+	{
+		tmp = tmp + s[i];
+	}
+	return stoi(tmp);
+}
 vector<string> datos(string query)
 {
 	vector<string> d;
 	int j = query.find("(")+1;
+	int tam = query.size();
 	string tmp;
-	while(query[j]!=')')
+	while(j<tam)
 		tmp = tmp + query[j++];
 	j = 0;
 	string tmp2;
@@ -67,10 +78,13 @@ vector<string> datos(string query)
 			else if(tmp.substr(j+1, 4)=="char")
 			{
 				d.push_back("char");
-				j = j + 6;
 				//c h a r ( 3 0 )
 				//0 1 2 3 4 5 6 7
 				//c h a r ( 9 )
+				string t = tmp.substr(j+1,15);
+				string m = t.substr(t.find("("), t.find(")")-t.find("("));
+				int num = get_number(m);
+				j = j + m.size()+1+6;
 			}
 			else
 				cout<<"Error de sintaxis";
@@ -326,5 +340,6 @@ int main()
 			select(query);
 		}
 	}
-    return 0;
+	//create_table("create table estudiante(id-int,nombre-char(23),edad-id");
+	return 0;
 }
