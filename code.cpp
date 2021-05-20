@@ -333,8 +333,8 @@ void select(string consulta)
         {
             file.read(buffer,buffer_size+n);
             string temporalBuf = buffer;
-            temporalBuf = temporalBuf.substr(0, temporalBuf.size() - 1);
             VecRegistros = ArmarRegistro(temporalBuf);
+            temporalBuf = temporalBuf.substr(0, temporalBuf.size() - 1);
             if (VecRegistros[nCampo] == valorBuscado)
             {
                 for (auto i : VecRegistros)
