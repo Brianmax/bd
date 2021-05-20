@@ -287,7 +287,14 @@ void select(string consulta)
     size_t tam = consulta.size(); 
     size_t i = consulta.find("desde");
     size_t j = consulta.find("donde");
-    size_t k = consulta.find("=");
+    //size_t k = consulta.find("=");
+	size_t k = 0;
+	if(consulta.find("=")!=-1)
+		k = consulta.find("=");
+	else if(consulta.find("<")!=-1)
+		k = consulta.find("<");
+	else
+		k = consulta.find(">");
     tabla = consulta.substr(i+6,j-(i+7));
     campoBuscado = consulta.substr(j+6,k-(j+6));
     condicion = consulta.substr(k,1);
@@ -342,11 +349,55 @@ void select(string consulta)
                 cout<<endl;
             }
         }
-    }
+	case '<':
+		for(int i = 0; i<length; i = i + buffer_size+n)
+		{
+			file.read(buffer, buffer_size+ n);
+			string temporalBuf = buffer;
+			VecRegistros =  ArmarRegistro(temporalBuf);
+			temporalBuf = temporalBuf.substr(0, temporalBuf.size()-1);
+			int a = 0, b = 0;
+			if(var[nCampo]=="int")
+			{
+				a = stoi(VecRegistros[nCampo]);
+				b = stoi(valorBuscado);
+			}
+			if(a < b)
+			{
+				for(auto i: VecRegistros)
+				{
+					cout<<i<<"|";
+				}
+				cout<<endl;
+			}
+		}
+		case '>':
+			for(int i = 0; i<length; i = i + buffer_size+n)
+			{
+				file.read(buffer, buffer_size+n);
+				string temporalBuf = buffer;
+				VecRegistros = ArmarRegistro(temporalBuf);
+				temporalBuf = temporalBuf.substr(0, temporalBuf.size()-1);
+				int a = 0, b = 0;
+				if(var[nCampo]=="int")
+				{
+					a = stoi(VecRegistros[nCampo]);
+					b = stoi(valorBuscado);				
+				}
+				if(a > b)
+				{
+					for(auto i: VecRegistros)
+					{
+						cout<<i<<"|";
+					}
+				}
+				cout<<endl;
+			}
+	}
 }
 int main()
 {
-	/*while (true)
+	while (true)
 	{
 		string query;
 		getline(cin, query);
@@ -363,9 +414,9 @@ int main()
 		{
 			select(query);
 		}
-	}*/
+	}
 	//create_table("create table estudiante(id-int,nombre-char(23),edad-id");
-	select("select * desde estudiante donde id=1");
+	//select("select * desde estudiante donde edad>0");
 	//insert("insertar estudiante(1,jose,arequipa,34)");
 	return 0;
 }
