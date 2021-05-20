@@ -1,4 +1,5 @@
 #include<bits/stdc++.h>
+#include<algorithm>
 using namespace std;
 const string metadata = "_metadata";
 const string txt = ".txt";
@@ -7,7 +8,7 @@ string blank(string str, int n)
 	string xd;
 	int x = n-str.size();
 	for(int i=0; i<x; i++)
-		xd = xd + " ";
+		xd = xd + ' ';
 	return xd;
 }
 int isSubstring(string s1, string s2)
@@ -174,8 +175,10 @@ void insert(string str)
 	file.open(nombre, fstream::app);
 	vector<string> vc;
 	vc = obtener_datos(str);
-	for(auto x: vc)
-		file<<x+",";
+	int tam = vc.size()-1;
+	for(int i=0;i<tam;i++)
+		file<<vc[i]+",";
+	file<<vc[tam]+";";
 }
 string q(string query)
 {
@@ -371,30 +374,109 @@ void select(string consulta)
 				cout<<endl;
 			}
 		}
-		case '>':
-			for(int i = 0; i<length; i = i + buffer_size+n)
+	case '>':
+		for(int i = 0; i<length; i = i + buffer_size+n)
+		{
+			file.read(buffer, buffer_size+n);
+			string temporalBuf = buffer;
+			VecRegistros = ArmarRegistro(temporalBuf);
+			temporalBuf = temporalBuf.substr(0, temporalBuf.size()-1);
+			int a = 0, b = 0;
+			if(var[nCampo]=="int")
 			{
-				file.read(buffer, buffer_size+n);
-				string temporalBuf = buffer;
-				VecRegistros = ArmarRegistro(temporalBuf);
-				temporalBuf = temporalBuf.substr(0, temporalBuf.size()-1);
-				int a = 0, b = 0;
-				if(var[nCampo]=="int")
-				{
-					a = stoi(VecRegistros[nCampo]);
-					b = stoi(valorBuscado);				
-				}
-				if(a > b)
-				{
-					for(auto i: VecRegistros)
-					{
-						cout<<i<<"|";
-					}
-				}
-				cout<<endl;
+				a = stoi(VecRegistros[nCampo]);
+				b = stoi(valorBuscado);				
 			}
+			if(a > b)
+			{
+				for(auto i: VecRegistros)
+				{
+					cout<<i<<"|";
+				}
+			}
+			cout<<endl;
+		}
 	}
 }
+string eliminar(string a)
+{
+	int i=0;
+	string res;
+	while(a[i]!=' ')
+		res = res + a[i++];
+	return res;
+}
+vector<string> split(string str, char simbolo) {
+    
+	remove(str.begin(),str.end(),' ');
+    int posInit = 0;
+    int posFound = 0;
+    string splitted;
+    vector<string> results;
+    while(posFound >= 0){
+        posFound = str.find(simbolo, posInit);
+        splitted = str.substr(posInit, posFound - posInit);
+		//cout<<"dded "<<splitted<<"ddededdee"<<endl;
+        posInit = posFound + 1;
+		//cout<<"nuevo "<<splitted<<"espcaio"<<endl;
+        results.push_back(splitted);
+    }
+	/*int tam = str.size();
+	int i = 0;
+	while(i<tam)
+	{
+		if(str[i++]==",")
+		{
+			results.push_back(splitted);
+			splitted.clear();
+			i++;
+		}
+		splitted = splitted 
+	}*/
+    return results;
+}
+bool datoEncontrado(string registro, char simboloSeparacion, int nCampo,string datoBuscado)
+{
+    vector<string> vectoRegistro = split(registro,simboloSeparacion);
+	//cout<<datoBuscado<<"xdxdxd"<<endl;
+	//cout<<vectoRegistro[nCampo]<<"xxdxd"<<endl;
+    return !datoBuscado.compare(vectoRegistro[nCampo]);
+}
+void BorrarDef(string consulta){
+    string tabla,campoBuscado,datoBuscado;
+    size_t tam = consulta.size(); 
+    size_t i = consulta.find("desde");
+    size_t j = consulta.find("donde");
+    size_t k = consulta.find("=");
+    tabla = consulta.substr(i+6,j-(i+7));
+    campoBuscado = consulta.substr(j+6,k-(j+6));
+    datoBuscado = consulta.substr(k+1,tam-(k+1)); 
+
+    string campos = conseguirCampos(tabla);
+    int nCampo = encontrarNcampo(campos, campoBuscado, ';');
+    fstream file;
+    ofstream file_tmp;
+    file.open("tabla_"+tabla+".txt");
+    file_tmp.open("tmp.txt");
+    string line; 
+    
+    while(getline(file,line,';')){
+        if(!datoEncontrado(line,',',nCampo,datoBuscado)){
+            //cout<<"dcdc"<<line<<endl;
+			file_tmp<<line<<';';
+        }
+        else{
+            cout<<"Registro eliminado:"<<endl<<line<<endl;
+        }
+    }
+    file.close();
+    file_tmp.close();
+    tabla+=".txt";
+    remove(tabla.c_str());
+	tabla = "tabla_"+tabla; 
+    rename("tmp.txt",tabla.c_str());
+}
+
 int main()
 {
 	while (true)
@@ -413,10 +495,14 @@ int main()
 		else if(tmp == "select")
 		{
 			select(query);
+
 		}
+		else if(tmp == "borrar")
+			BorrarDef(query);
 	}
 	//create_table("create table estudiante(id-int,nombre-char(23),edad-id");
 	//select("select * desde estudiante donde edad>0");
 	//insert("insertar estudiante(1,jose,arequipa,34)");
+	//BorrarDef("borrar desde estudiante donde ciudad=arequipa");
 	return 0;
 }
