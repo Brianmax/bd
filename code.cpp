@@ -66,6 +66,8 @@ vector<string> datos(string query)
 	string tmp2;
 	while(j<tmp.size())
 	{
+		ofstream file;
+		file.open("buffer.txt",fstream::app);
 		if(tmp[j]=='-')
 		{
 			d.push_back(tmp2);
@@ -74,6 +76,7 @@ vector<string> datos(string query)
 			{
 				d.push_back("int");
 				j = j+5;
+				file<<15<<endl;
 			}
 			else if(tmp.substr(j+1, 4)=="char")
 			{
@@ -84,6 +87,7 @@ vector<string> datos(string query)
 				string t = tmp.substr(j+1,15);
 				string m = t.substr(t.find("("), t.find(")")-t.find("("));
 				int num = get_number(m);
+				file<<num<<endl;
 				j = j + m.size()+1+6;
 			}
 			else
@@ -121,11 +125,14 @@ void create_table(string query)
 	vector<string> d = datos(query);
 	int i = d.size();
 	nn<<i/2;
+	ofstream variables;
+	variables.open(nombre+"_""variables.txt");
 	for(int j = 1; j<i; j=j+2)
 	{
 		string tmp = d[j] + " " + d[j-1] + ";";
 		file<<tmp<<endl;
         gaa<<d[j-1]+"-"+d[j]+";";
+		variables<<d[j]<<endl;
 	}
 	file<<"};";
 	file.close();
@@ -134,19 +141,29 @@ vector<string> obtener_datos(string query)
 {
 	vector<string> d;
 	int i = query.find("(")+1;
+	int tam = query.size()-1;
 	string tmp;
+	ifstream file;
+	string b;
+	file.open("buffer.txt");
+	vector<int> buffer_size;
+	while (getline(file, b))
+	{
+		buffer_size.push_back(stoi(b));
+	}
+	int a = 0;
 	while(query[i]!=')')
 	{
 		if(query[i]==',')
 		{
-			d.push_back(tmp+blank(tmp, 15));
+			d.push_back(tmp+blank(tmp, buffer_size[a++]));
 			tmp.clear();
 			i++;
 		}
 		tmp = tmp + query[i];
 		i++;
 	}
-	d.push_back(tmp+blank(tmp, 15));
+	d.push_back(tmp+blank(tmp, buffer_size[a]));
 	return d;
 }
 void insert(string str)
@@ -293,36 +310,43 @@ void select(string consulta)
     file.seekg(0, file.beg);
 
     vector<string> VecRegistros;
-
-    char *buffer = new char[15*n+n];
+	ifstream myfile;
+	string str;
+	myfile.open("buffer.txt");
+	int buffer_size=0;
+	while(getline(myfile,str))
+		buffer_size = buffer_size + stoi(str);
+    char *buffer = new char[buffer_size+n];
     char cond = condicion.c_str()[0];
-
+	vector<string> var;
+	ifstream vars;
+	string g;
+	vars.open("estudiante_variables.txt");
+	while(getline(vars,g))
+		var.push_back(g);
     switch (cond)
     {
     case '=':
         //tamaño registro 10
         //int(2) + ',' string(6) + ';'
-        for (int i = 0; i < length; i += 15*n+n)
+        for (int i = 0; i < length; i += buffer_size+n)
         {
-            file.read(buffer,15*n+n);
+            file.read(buffer,buffer_size+n);
             string temporalBuf = buffer;
             temporalBuf = temporalBuf.substr(0, temporalBuf.size() - 1);
             VecRegistros = ArmarRegistro(temporalBuf);
-
-            
             if (VecRegistros[nCampo] == valorBuscado)
             {
                 for (auto i : VecRegistros)
                     cout << i<<"|";
                 cout<<endl;
             }
-
         }
     }
 }
 int main()
 {
-	while (true)
+	/*while (true)
 	{
 		string query;
 		getline(cin, query);
@@ -339,7 +363,9 @@ int main()
 		{
 			select(query);
 		}
-	}
+	}*/
 	//create_table("create table estudiante(id-int,nombre-char(23),edad-id");
+	select("select * desde estudiante donde id=1");
+	//insert("insertar estudiante(1,jose,arequipa,34)");
 	return 0;
 }
