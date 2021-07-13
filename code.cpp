@@ -3,13 +3,44 @@
 using namespace std;
 const string metadata = "_metadata";
 const string txt = ".txt";
-string blank(string str, int n)
+using namespace std;
+
+string fecha(){
+  string fcha;
+  int dia=rand()%31+1;
+  fcha += to_string(dia)+"-";
+  int mes=rand()%12+1;
+  fcha += to_string(mes)+"-";
+  int anho=rand()%11+1970;
+  fcha += to_string(anho);
+  return fcha;
+}
+vector<string> consulta()
 {
-	string xd;
-	int x = n-str.size();
-	for(int i=0; i<x; i++)
-		xd = xd + ' ';
-	return xd;
+  	string con = "create table peruano(";
+  	int dni = 11111111;
+  	vector<string> h;
+	  srand(time(nullptr));
+	vector<string> f;
+  	for(int i = 0; i<2000; i++)
+    {
+		string nombre = "nombre-";
+  		string apellido = "apellido-";
+      	string tmp = to_string(dni);
+      	nombre = nombre + tmp;
+      	apellido = apellido + tmp;
+      	int edad  = 0;
+	  	edad = rand()%100+1;
+	  	string fcha = fecha();
+	  	con = con + tmp+","+nombre+","+apellido+","+to_string(edad)+","+fcha+")";
+		cout<<con<<endl;
+		f.push_back(con);
+		con = "create table peruano(";
+		dni++;
+		
+    }
+
+	return f;
 }
 int isSubstring(string s1, string s2)
 {
@@ -29,21 +60,15 @@ int isSubstring(string s1, string s2)
         if (j == M)
             return i;
     }
- 
     return -1;
 }
-void copiar(string nombre1, string nombre2)
+string blank(string str, int n)
 {
-	ifstream file1;
-	ofstream file2;
-	file1.open("estudiante");
-	file2.open("header.cpp");
-	string str;
-	cout<<"xdxd"<<endl;
-	while(getline(file1, str))
-	{
-		file2<<str<<endl;
-	}
+	string xd;
+	int x = n-str.size();
+	for(int i=0; i<x; i++)
+		xd = xd + ' ';
+	return xd;
 }
 int get_number(string s)
 {
@@ -55,6 +80,15 @@ int get_number(string s)
 	}
 	return stoi(tmp);
 }
+string name_struct(string q)
+{
+	int j = q.find("(")-1;
+	string tmp;
+	while(q[j]!=' ')
+		tmp = tmp + q[j--];
+	reverse(tmp.begin(), tmp.end());
+	return tmp;
+}
 vector<string> datos(string query)
 {
 	vector<string> d;
@@ -65,10 +99,11 @@ vector<string> datos(string query)
 		tmp = tmp + query[j++];
 	j = 0;
 	string tmp2;
+	string g = name_struct(query);
 	while(j<tmp.size())
 	{
 		ofstream file;
-		file.open("buffer.txt",fstream::app);
+		file.open("buffer"+g+".txt",fstream::app);
 		if(tmp[j]=='-')
 		{
 			d.push_back(tmp2);
@@ -101,15 +136,7 @@ vector<string> datos(string query)
 	//0 1 2 3 4 5 6 7 8 9 1 2 3 4 5 6 7 8
 	return d;
 }
-string name_struct(string q)
-{
-	int j = q.find("(")-1;
-	string tmp;
-	while(q[j]!=' ')
-		tmp = tmp + q[j--];
-	reverse(tmp.begin(), tmp.end());
-	return tmp;
-}
+
 void create_table(string query)
 {
 	string tpt = "struct ";
@@ -146,7 +173,8 @@ vector<string> obtener_datos(string query)
 	string tmp;
 	ifstream file;
 	string b;
-	file.open("buffer.txt");
+	string g = name_struct(query);
+	file.open("buffer" + g + ".txt");
 	vector<int> buffer_size;
 	while (getline(file, b))
 	{
@@ -322,7 +350,7 @@ void select(string consulta)
     vector<string> VecRegistros;
 	ifstream myfile;
 	string str;
-	myfile.open("buffer.txt");
+	myfile.open("buffer"+tabla+".txt");
 	int buffer_size=0;
 	while(getline(myfile,str))
 		buffer_size = buffer_size + stoi(str);
@@ -331,7 +359,7 @@ void select(string consulta)
 	vector<string> var;
 	ifstream vars;
 	string g;
-	vars.open("estudiante_variables.txt");
+	vars.open(tabla+"_variables.txt");
 	while(getline(vars,g))
 		var.push_back(g);
     switch (cond)
@@ -397,6 +425,7 @@ void select(string consulta)
 			cout<<endl;
 		}
 	}
+	cout<<"select finalizado"<<endl;
 }
 string eliminar(string a)
 {
@@ -407,64 +436,76 @@ string eliminar(string a)
 	return res;
 }
 vector<string> split(string str, char simbolo) {
-    
-	remove(str.begin(),str.end(),' ');
+    str.erase(remove(str.begin(), str.end(), ' '), str.end());
     int posInit = 0;
     int posFound = 0;
     string splitted;
     vector<string> results;
+    
     while(posFound >= 0){
         posFound = str.find(simbolo, posInit);
         splitted = str.substr(posInit, posFound - posInit);
-		//cout<<"dded "<<splitted<<"ddededdee"<<endl;
         posInit = posFound + 1;
-		//cout<<"nuevo "<<splitted<<"espcaio"<<endl;
         results.push_back(splitted);
     }
-	/*int tam = str.size();
-	int i = 0;
-	while(i<tam)
-	{
-		if(str[i++]==",")
-		{
-			results.push_back(splitted);
-			splitted.clear();
-			i++;
-		}
-		splitted = splitted 
-	}*/
     return results;
 }
 bool datoEncontrado(string registro, char simboloSeparacion, int nCampo,string datoBuscado)
 {
     vector<string> vectoRegistro = split(registro,simboloSeparacion);
-	//cout<<datoBuscado<<"xdxdxd"<<endl;
-	//cout<<vectoRegistro[nCampo]<<"xxdxd"<<endl;
     return !datoBuscado.compare(vectoRegistro[nCampo]);
+}
+bool datoEncontrado(string registro, char simboloSeparacion, int nCampo,string datoBuscado, string operador)
+{
+	vector<string> vectoRegistro = split(registro, simboloSeparacion);
+	if(operador == "<")
+	{
+		int a = stoi(datoBuscado);
+		int b = stoi(vectoRegistro[nCampo]);
+		return a>b;
+	}
+	int a = stoi(datoBuscado);
+	int b = stoi(vectoRegistro[nCampo]);
+	return a<b;
 }
 void BorrarDef(string consulta){
     string tabla,campoBuscado,datoBuscado;
     size_t tam = consulta.size(); 
     size_t i = consulta.find("desde");
     size_t j = consulta.find("donde");
-    size_t k = consulta.find("=");
+    size_t k = 0;
+	if(consulta.find("=")!=-1)
+		k = consulta.find("=");
+	else if(consulta.find("<")!=-1)
+		k = consulta.find("<");
+	else if(consulta.find(">")!=-1)
+		k = consulta.find(">");
     tabla = consulta.substr(i+6,j-(i+7));
     campoBuscado = consulta.substr(j+6,k-(j+6));
     datoBuscado = consulta.substr(k+1,tam-(k+1)); 
-
     string campos = conseguirCampos(tabla);
+	string simbolo = consulta.substr(k,1);
     int nCampo = encontrarNcampo(campos, campoBuscado, ';');
     fstream file;
     ofstream file_tmp;
     file.open("tabla_"+tabla+".txt");
     file_tmp.open("tmp.txt");
-    string line; 
-    
+    string line;
     while(getline(file,line,';')){
-        if(!datoEncontrado(line,',',nCampo,datoBuscado)){
-            //cout<<"dcdc"<<line<<endl;
-			file_tmp<<line<<';';
-        }
+		cout<<"#ssddzzzzzzzzz"<<endl;
+		if(simbolo=="<" || simbolo==">")
+		{
+			if(!datoEncontrado(line,',',nCampo,datoBuscado,simbolo))
+			{
+				file_tmp<<line<<";";
+			}
+		}
+		else if(simbolo=="="){
+        	if(!datoEncontrado(line,',',nCampo,datoBuscado)){
+        	    //cout<<"dcdc"<<line<<endl;
+				file_tmp<<line<<';';
+        	}
+		}
         else{
             cout<<"Registro eliminado:"<<endl<<line<<endl;
         }
@@ -476,7 +517,109 @@ void BorrarDef(string consulta){
 	tabla = "tabla_"+tabla; 
     rename("tmp.txt",tabla.c_str());
 }
+vector<string> obtenerArgumentos(string consulta){
+    vector<string> args;
+    string tabla, campoCondicion, datoCondicion,campoBuscado,nuevoDato;
+    size_t tam = consulta.size();
+    size_t i = consulta.find("set");
+    size_t j = consulta.find("donde");
+    size_t l = consulta.find("=");
+    size_t m = consulta.rfind("=");
+    
+    // if(l==m)
+    // {
+    //     if(consulta.find("<")!=std::string::npos){
+    //         m = consulta.find("<");
+    //         simboloCondicion = "<";
+    //     }
+    //     else if(consulta.find("<")!=std::string::npos)
+    //     {
+    //         m = consulta.find(">");
+    //         simboloCondicion=">";
+    //     }
+    // }
+    tabla = consulta.substr(10,i-10);
+    campoBuscado = consulta.substr(i+4,l-(i+4));
+    nuevoDato = consulta.substr(l+1,j-(l+1));
+    campoCondicion = consulta.substr(j+6,m-(j+6));
+    datoCondicion = consulta.substr(m+1,tam-(m+1));
 
+    tabla.erase(remove(tabla.begin(), tabla.end(), ' '), tabla.end());
+    campoBuscado.erase(remove(campoBuscado.begin(), campoBuscado.end(), ' '), campoBuscado.end());
+    nuevoDato.erase(remove(nuevoDato.begin(), nuevoDato.end(), ' '), nuevoDato.end());
+    campoCondicion.erase(remove(tabla.begin(), campoCondicion.end(), ' '), campoCondicion.end());
+    datoCondicion.erase(remove(datoCondicion.begin(), datoCondicion.end(), ' '), datoCondicion.end());
+
+    if(nuevoDato.find("'")!=std::string::npos)
+        nuevoDato = nuevoDato.substr(1,nuevoDato.size()-2);
+    if(datoCondicion.find("'")!=std::string::npos)
+        datoCondicion = datoCondicion.substr(1,datoCondicion.size()-2);
+    args.push_back(tabla);
+    args.push_back(campoBuscado);
+    args.push_back(nuevoDato);
+    args.push_back(campoCondicion);
+    args.push_back(datoCondicion);
+    return args;
+}
+string mantenerConsistencia(string &dato,int nCampo, string tabla){
+    ifstream file;
+    string line;
+    file.open("buffer"+tabla+".txt");
+    int i = 0;
+    while(i<=nCampo){
+        getline(file,line);
+        i++;
+    }
+    int buffer = stoi(line,nullptr);
+    int nEspacios = buffer-dato.size(); 
+    dato.append(nEspacios,' ');
+    return dato;
+}
+void Actualizar(string consulta){
+ 
+    string tabla, campoBuscado,nuevoDato,campoCondicion, datoCondicion;
+    vector<string> argsFromConsulta = obtenerArgumentos(consulta);
+    tabla = argsFromConsulta[0];
+    campoBuscado = argsFromConsulta[1];
+    nuevoDato = argsFromConsulta[2];
+    campoCondicion = argsFromConsulta[3];
+    datoCondicion = argsFromConsulta[4];
+    
+    string campos = conseguirCampos(tabla);
+    int ncampoBuscado = encontrarNcampo(campos, campoBuscado, ';');
+    int ncampoCondicion = encontrarNcampo(campos,campoCondicion,';');
+    
+    fstream file;
+    ofstream file_tmp;
+    file.open("tabla_"+tabla+txt);
+    file_tmp.open("tmp.txt");
+    string line,new_line; 
+    
+    while(getline(file,line,';')){
+        if(!datoEncontrado(line,',',ncampoCondicion,datoCondicion)){
+            file_tmp<<line<<';';
+        }
+        else{
+            vector<string> tmp = split(line,',');
+            tmp[ncampoBuscado] = nuevoDato;
+            size_t tam = tmp.size();
+            for(size_t i = 0;i<tam;i++)
+            {
+                mantenerConsistencia(tmp[i],i,tabla);
+                new_line+=tmp[i];
+                new_line+=',';
+            }
+            new_line = new_line.substr(0,new_line.size()-1); 
+            file_tmp<<new_line<<';';
+            //cout<<"Registro actualizado:"<<endl<<line<<" -> "<<new_line<<endl;
+            new_line.clear(); 
+        }
+    }
+    file.close();
+    file_tmp.close();
+    remove(("tabla_"+tabla+txt).c_str());
+    rename("tmp.txt",("tabla_"+tabla+txt).c_str());
+}
 int main()
 {
 	while (true)
@@ -485,24 +628,15 @@ int main()
 		getline(cin, query);
 		string tmp = q(query);
 		if(tmp == "create")
-		{
 			create_table(query);
-		}
 		else if(tmp == "insertar")
-		{
 			insert(query);
-		}
 		else if(tmp == "select")
-		{
 			select(query);
-
-		}
 		else if(tmp == "borrar")
 			BorrarDef(query);
+		else if(tmp == "modificar")
+			Actualizar(query);
 	}
-	//create_table("create table estudiante(id-int,nombre-char(23),edad-id");
-	//select("select * desde estudiante donde edad>0");
-	//insert("insertar estudiante(1,jose,arequipa,34)");
-	//BorrarDef("borrar desde estudiante donde ciudad=arequipa");
 	return 0;
 }
