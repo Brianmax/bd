@@ -1,1 +1,0 @@
-1              ,cesar     ,arequipa     ,23             ;2              ,julio     ,cusco        ,28             ;3              ,andres    ,lima         ,34             ;4              ,juan      ,puno         ,29             ;5              ,ernesto   ,londres      ,50             ;
