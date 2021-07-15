@@ -1,0 +1,1 @@
+Estudiante;id-int(5),nom-char(5),ape-char(5),edad-int(5),fecnac-date;5,5,5,5,10;idx;
