@@ -691,6 +691,5 @@ void sgbd()
 
 int main()
 {
-    sgbd();
-
+    cout<<"Hola";
 }
