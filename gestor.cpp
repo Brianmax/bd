@@ -12,6 +12,536 @@ const string metadata = "_metadata";
 const string filesFormat = ".txt";
 const char globalSplitter = ',';
 
+vector<string> split_Character(string s, char c)
+{
+    vector<string> result;
+    size_t pos = 0;
+    std::string token;
+    while ((pos = s.find(c)) != std::string::npos)
+    {
+        token = s.substr(0, pos);
+        result.push_back(token);
+        s.erase(0, pos + 1);
+    }
+    result.push_back(s);
+    return result;
+}
+template< class T>
+struct node
+{
+    T data;
+    vector<int> pos;
+    node<T> *ndes[2] = {};
+    int weight=1;
+	int height = 0;
+    int space = 0;
+    int st = 0;
+    int fact=0;
+    node(T d)
+    {
+        data = d;
+    }
+};
+template<class T>
+struct avl_tree
+{
+    node<T> *root=nullptr;
+    void insert(T d, int index);
+    bool find(T d, node<T> **&ptr, vector<node<T> **> &arr);
+    void update(vector<node<T> **> &arr, int t);
+    void inorder(node<T> *n);
+    void balanceo(node<T> **n);
+    bool search_nod(T d, node<T> *&pt);
+	node<T>** rplce(vector<node<T> **> &arr, node<T> **m);
+    void remove(T d);
+};
+template<class T>
+void avl_tree<T>::balanceo(node<T> **n)
+{
+    if((*n)->fact==2)
+    {
+    	if(((*n)->ndes[1])->fact==1){
+        	node<T> *nodeB=(*n)->ndes[1];
+        	(*n)->ndes[1]=nodeB->ndes[0];
+        	nodeB->ndes[0]=(*n);
+        	(*n)=(nodeB);
+			node<T> *l, *r, *p;
+			p = (*n)->ndes[0]; l = p->ndes[0]; r = p->ndes[1];
+			int x,y;
+			x = l==nullptr?0:l->weight;
+			y = r==nullptr?0:r->weight;
+			p->weight = max(x,y)+1;
+			(*n)->weight=max(((*n)->ndes[0])->weight, ((*n)->ndes[1])->weight)+1;
+		}
+		else
+		{
+            node<T> *a,*b,*c;
+            a = (*n);
+            b = ((*n)->ndes[1])->ndes[0];
+            c = (*n)->ndes[1];
+            T t = c->data;
+            c->data = b->data; b->data = t;
+            a->ndes[1] = b->ndes[0];
+            b->ndes[0] = b->ndes[1]; b->ndes[1] = c->ndes[1];
+            c->ndes[0] = a; c->ndes[1] = b;
+            (*n) = c;
+            int x,y;
+            x = a->ndes[0]==nullptr?0:(a->ndes[0])->weight;
+            y = a->ndes[1]==nullptr?0:(a->ndes[1])->weight;
+            a->weight = max(x,y)+1;
+            x = b->ndes[0]==nullptr?0:(b->ndes[0])->weight;
+            y = b->ndes[1]==nullptr?0:(b->ndes[1])->weight;
+            b->weight = max(x,y)+1;
+            c->weight = max(a->weight, b->weight)+1;
+		}
+    }
+    else
+	{
+		if(((*n)->ndes[0])->fact==-1)
+		{
+        	node<T> *nodeB=(*n)->ndes[0];
+			(*n)->ndes[0]=nodeB->ndes[1];
+			nodeB->ndes[1]=(*n);
+			(*n)=nodeB;
+			node<T> *l, *r, *p;
+			p = (*n)->ndes[1]; l = p->ndes[0]; r = p->ndes[1];
+			int x,y;
+			x = l==nullptr?0:l->weight;
+			y = r==nullptr?0:r->weight;
+			p->weight = max(x,y)+1;
+			(*n)->weight=max(((*n)->ndes[0])->weight, ((*n)->ndes[1])->weight)+1;
+		}
+		else
+		{
+			node<T> *a,*b,*c;
+			a = (*n);
+			c = (*n)->ndes[0];
+			b = ((*n)->ndes[0])->ndes[1];
+			T t; t = c->data;
+			c->data = b->data;
+			b->data = t;
+			a->ndes[0] = b->ndes[1];
+			b->ndes[1] = b->ndes[0]; b->ndes[0] = c->ndes[0];
+			c->ndes[0] = b; c->ndes[1] = a;
+			(*n) = c;
+			int x,y;
+			x = b->ndes[0]==nullptr?0:(b->ndes[0])->weight;
+			y = b->ndes[1]==nullptr?0:(b->ndes[1])->weight;
+			b->weight = max(x,y)+1;
+			x = a->ndes[0]==nullptr?0:(a->ndes[0])->weight;
+			y = a->ndes[1]==nullptr?0:(a->ndes[1])->weight;
+			a->weight = max(x,y)+1;
+			c->weight = max(a->weight, b->weight)+1;
+		}
+	}
+}
+template<class T>
+void avl_tree<T>::update(vector<node<T> **> &arr, int t)
+{
+    int len = arr.size();
+	if(t){
+		for(int i=len-1; i>=0; i--){
+			int a,b;
+			a = (*arr[i])->ndes[1]==nullptr?0:((*arr[i])->ndes[1])->weight;
+			b = (*arr[i])->ndes[0]==nullptr?0:((*arr[i])->ndes[0])->weight;
+			(*arr[i])->weight=(a!=b)?(*arr[i])->weight+1:(*arr[i])->weight;
+			(*arr[i])->fact=a-b;
+			if(a==b)
+				return;
+			if(abs((*arr[i])->fact)>1)
+			{
+				balanceo(arr[i]);
+				return;
+			}
+		}
+	}
+	else
+	{
+		for(int i=len-1; i>=0; i--)
+		{
+			int x,y;
+			x = (*arr[i])->ndes[0]==nullptr?0:((*arr[i])->ndes[0])->weight;
+			y = (*arr[i])->ndes[1]==nullptr?0:((*arr[i])->ndes[1])->weight;
+			(*arr[i])->weight = max(x,y)+1;
+			(*arr[i])->fact = y-x;
+			if(abs((*arr[i])->fact)>1)
+				balanceo(arr[i]);
+		}
+	}
+}
+template<class T>
+bool avl_tree<T>::find(T d, node<T> **&ptr, vector<node<T> **> &arr)
+{
+    for(ptr=&root; (*ptr)&&(*ptr)->data!=d;)
+    {
+        arr.push_back(ptr);
+        if(((*ptr)->data).find_first_of("abcdefghijklmnopqrstuvwxyz-")!=std::string::npos)
+        {
+            cout<<"string"<<endl;
+            ptr=&(*ptr)->ndes[((*ptr)->data)<(d)];
+        }
+        else
+        {
+            stringstream tmp1((*ptr)->data);
+            stringstream tmp2(d);
+            //cout<<"dfdfdf "<<((*ptr)->data).size()<<endl;
+            int a,b;
+            tmp1>>a;
+            tmp2>>b;
+            int comp = a<b;
+            cout<<"nofo "<<comp<<endl;
+            ptr=&(*ptr)->ndes[comp];
+        }
+    }
+    return ((*ptr)!=0);
+}
+template<class T>
+bool avl_tree<T>::search_nod(T d, node<T> *&pt)
+{
+    for(pt=root; pt&&pt->data!=d;)
+    {
+        if((pt->data).find_first_of("abcdefghijklmnopqrstuvwxyz-")!=std::string::npos)
+        {
+            cout<<"string gaaaaaa"<<endl;
+            pt = pt->ndes[pt->data<d];
+        }
+        else
+        {
+            cout<<"int stream"<<endl;
+            stringstream tmp1(pt->data);
+            stringstream tmp2(d);
+            int a,b;
+            tmp1>>a;
+            tmp2>>b;
+            int comp = a<b;
+            pt = pt->ndes[comp];
+        }
+    }
+    return pt!=0;
+}
+template<class T>
+void avl_tree<T>::insert(T d, int index)
+{
+    vector<node<T> **> arr;
+    node<T> **pt;
+    if(find(d, pt, arr))
+    {
+        (*pt)->pos.push_back(index);
+        return;
+    }
+    *pt=new node<T>(d);
+    (*pt)->pos.push_back(index);
+    update(arr,1);
+}
+template<class T>
+node<T>** avl_tree<T>::rplce(vector<node<T> **> &arr, node<T> **m)
+{
+    node<T> **n;
+	int i = 0;
+	arr.push_back(m);
+	n = &(*m)->ndes[i];
+	for(; (*n)->ndes[!i]; n=&(*n)->ndes[!i])
+		arr.push_back(n);
+    return n;
+}
+template<class T>
+void avl_tree<T>::remove(T d)
+{
+	node<T> **r;
+	vector<node<T> **> arr;
+	if(!find(d,r,arr))
+		return;
+	if((*r)->ndes[0]!=nullptr && (*r)->ndes[1]!=nullptr)
+	{
+		node<T> **q;
+		q = rplce(arr,r);
+		(*r)->data=(*q)->data;
+		r=q;
+	}
+    node<T> *aux = *r;
+	(*r)=(*r)->ndes[!(*r)->ndes[0]];
+	update(arr, 0);
+    delete aux;
+}
+template<class T>
+void avl_tree<T>::inorder(node<T> *n)
+{
+    if(n==nullptr)
+        return;
+    inorder(n->ndes[0]);
+    int len = n->pos.size();
+    cout<<"key: "<<n->data<<endl;
+    for(int i = 0; i < len; i++)
+        cout<<n->pos[i]<<endl;
+    inorder(n->ndes[1]);
+}
+node<string>* search_node(node<string> *r, string d)
+{
+    // cout<<r->data<<endl;
+    // g=r;
+    // cout<<"dsdsdsdsdsd "<<g->data<<endl;
+    node<string> *g;
+    for(g=r; g&&g->data!=d;)
+    {
+        cout<<"g:dat "<<g->data<<endl;
+        //cout<<"gaaaaa"<<g->data<<endl;
+        if(g->data==d)
+            return g;
+        else{    
+            if((g->data).find_first_of("abcdefghijklmnopqrstuvwxyz-")!=std::string::npos)
+            {
+                cout<<"arbol "<<g->data<<endl;
+                if(d > g->data)
+                    g = g->ndes[1];
+                else
+                    g = g->ndes[0];
+            }
+            else
+            {
+                cout<<"arbol int "<<g->data<<endl;
+                stringstream tmp1(g->data);
+                stringstream tmp2(d);
+                int a,b;
+                tmp1<<a;
+                tmp2<<b;
+                if(a>b)
+                    g = g->ndes[0];
+                else
+                    g = g->ndes[1];
+            }
+        }
+    }
+    return nullptr;
+}
+avl_tree<string> create_avl(vector<pair<string, int>> p)
+{
+    avl_tree<string> avl1;
+    int len = p.size();
+    for(int i = 0; i < len; i++)
+    {
+        avl1.insert(p[i].first, p[i].second);
+    }
+    return avl1;
+}
+// avl_tree<int> create_avl_int(vector<pair<string, int>> p)
+// {
+//     avl_tree<int> avl1;
+//     int len = p.size();
+//     for(int i = 0; i < len; i++)
+//         avl1.insert(stoi(p[i].first), p[i].second);
+//     return avl1;
+// }
+template<class T>
+void get_datos(vector<string> data, vector<int> p,
+avl_tree<T> &avl1, vector<string> tipos)
+{
+    ifstream fileTmp("Tablas/"+data[1]+"/"+data[1]+".txt");
+    vector<string> n_colum;
+    string n_columTmp;
+    getline(fileTmp,n_columTmp,';');
+    n_colum = split_Character(n_columTmp,',');
+    fileTmp.close();
+    ifstream file;
+    file.open("Tablas/"+data[1]+"/"+data[1]+".txt");
+    string output;
+    while (getline(file, output))
+        file >> output;
+    //cout<<output<<endl;
+    file.close();
+    //{id,nombre,edad}
+    //{10,10,2}
+    string columna = data[2];
+    int first = output.find(";");
+    int len = output.size();
+    string datos = output.substr(first+1, len-1);
+    int pos = 0;
+    for(int i=0; i<n_colum.size(); i++)
+    {
+        if(n_colum[i]==data[2]){
+            pos = i;
+            break;
+        }
+    }
+    int peso = 0;
+    for(int i = 0; i < pos; i++)
+    {
+        peso = peso + p[i];
+    }
+    peso = peso + pos;
+    len = datos.size();
+    int index = 0;
+    int f = 0;
+    int k = n_colum.size();
+    vector<pair<string,int>> elements;
+    while (f<len)
+    {
+        int l = p[index%k];
+        if(index%k==pos)
+        {
+            pair<string, int> tmp;
+            string ga = datos.substr(f,l);
+            ga.erase(remove(ga.begin(), ga.end(), ' '), ga.end());
+            tmp.first = ga;
+            tmp.second = f-peso;
+            elements.push_back(tmp);
+            //cout<<"pos: "<<f<<endl;
+            //cout<<datos[f]<<endl;
+            //cout<<"|"<<ga<<"|"<<endl;
+            //cout<<"------------------------------"<<endl;
+        }
+        f = f + p[index%k]+1;
+        index++;
+    }
+    avl1 = create_avl(elements);
+    // if(tipos[pos]=="char")
+    // {
+    //     avl1 = create_avl(elements);
+    //     cout<<"string"<<endl;
+    //     avl1.inorder(avl1.root);
+    // }
+    // else
+    // {
+    //     avl2 = create_avl_int(elements);
+    //     cout<<"int"<<endl;
+    //     avl2.inorder(avl2.root);
+    // }
+}
+template<class T>
+void UtilSerialize(node<T> *root, string index_name, string table_name, string &txt)
+{
+    if (root == nullptr)
+    {
+        txt = txt + "-1#";
+        return;
+    }
+    txt = txt + (root->data)+",";
+    int len = root->pos.size();
+    int i = 0;
+    for(; i<len-1; i++)
+    {
+        txt = txt + to_string(root->pos[i])+",";
+    }
+    txt = txt + to_string(root->pos[len-1])+"#";
+    UtilSerialize(root->ndes[0], index_name, table_name, txt);
+    UtilSerialize(root->ndes[1], index_name, table_name, txt);
+}
+template<class T>
+void serialize(string index_name, string table_name, node<T> *root)
+{
+    ofstream file;
+    string txt;
+    file.open("Tablas/"+table_name+"/"+index_name+".txt");
+    UtilSerialize(root, index_name, table_name, txt);
+    cout<<txt<<endl;
+    file << txt;
+    file.close();
+}
+
+// template<class T>
+// void UtilDeSerialize_int(node<T> *&root, string &txt)
+// {
+//     string tmp;
+//     tmp  = txt.substr(0,txt.find("#"));
+//     txt = txt.substr(tmp.size()+1);
+//     vector<string> posi;
+//     posi = split_Character(tmp, ',');
+//     for(auto x: posi)
+//         cout<<"posi: "<<x<<endl;
+//     cout<<"------------------------"<<endl;
+//     if(posi[0]=="-1")
+//         return;
+//     root = new node<T>(stoi(posi[0]));
+//     int len = posi.size();
+//     for(int i = 1; i < len; i++)
+//         root->pos.push_back(stoi(posi[i]));
+//     UtilDeSerialize_int(root->ndes[0], txt);
+//     UtilDeSerialize_int(root->ndes[1], txt);
+// }
+template<class T>
+void UtilDeSerialize(node<T> *&root, string &txt)
+{
+    string tmp;
+    tmp  = txt.substr(0,txt.find("#"));
+    txt = txt.substr(tmp.size()+1);
+    vector<string> posi;
+    posi = split_Character(tmp, ',');
+    for(auto x: posi)
+        cout<<"posi: "<<x<<endl;
+    cout<<"------------------------"<<endl;
+    if(posi[0]=="-1")
+        return;
+    root = new node<T>(posi[0]);
+    int len = posi.size();
+    for(int i = 1; i < len; i++)
+        root->pos.push_back(stoi(posi[i]));
+    UtilDeSerialize(root->ndes[0], txt);
+    UtilDeSerialize(root->ndes[1], txt);
+}
+template<class T>
+avl_tree<string> Deserialize(node<T> *&root, string &txt)
+{
+    avl_tree<string> tree; 
+    UtilDeSerialize(tree.root,txt);
+    //tree.inorder(tree.root);
+    return tree;
+}
+// template<class T>
+// void Deserialize_string(node<T> *&root, string &txt)
+// {
+//     avl_tree<int> tree; 
+//     UtilDeSerialize_int(tree.root,txt);
+//     tree.inorder(tree.root);
+// }
+// int main(){
+//     vector<string> data;
+//     vector<int> d;
+//     vector<string> h;
+//     vector<string> n_colum;
+//     vector<string> tipos;
+//     n_colum.push_back("ID_est");
+//     n_colum.push_back("nom");
+//     n_colum.push_back("ape");
+//     n_colum.push_back("edad");
+//     n_colum.push_back("fecnac");
+//     data.push_back("IDX_80000");
+//     data.push_back("tabla1");
+//     data.push_back("fecnac");
+//     d.push_back(12);
+//     d.push_back(30);
+//     d.push_back(30);
+//     d.push_back(12);
+//     d.push_back(10);
+//     h.push_back("int");
+//     h.push_back("string");
+//     h.push_back("string");
+//     h.push_back("string");
+//     h.push_back("int");
+//     h.push_back("string");
+//     tipos.push_back("int");
+//     tipos.push_back("string");
+//     tipos.push_back("string");
+//     tipos.push_back("int");
+//     tipos.push_back("string");
+//     avl_tree<string> avl1;
+//     avl_tree<int> avl2;
+//     vector<pair<string, int>> gaaaaa;
+//     gaaaaa = get_datos(data, d, n_colum, avl1, avl2, tipos);
+//     // int len = gaaaaa.size();
+//     // cout<<"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"<<endl;
+//     // for(int i = 0; i<len; i++)
+//     //     cout<<gaaaaa[i].first<<"    "<<gaaaaa[i].second<<endl;
+//     cout<<"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"<<endl;
+//     //avl1.inorder(avl1.root);
+//     //serialize("index_1", "estudiante", avl1.root);
+//     string txt;
+//     UtilSerialize(avl1.root, "index_1", "tabla1", txt);
+//     avl_tree<string> avl3;
+//     UtilDeSerialize(avl3.root, txt);
+//     cout<<"avl"<<endl;
+//     avl3.inorder(avl3.root);
+//     return 0;
+// }
+
 string remove_spaces(string str)
 {
     int tam = str.size();
@@ -124,20 +654,6 @@ vector<string> processQuery(string query, int operation)
     return result;
 }
 
-vector<string> split_Character(string s, char c)
-{
-    vector<string> result;
-    size_t pos = 0;
-    std::string token;
-    while ((pos = s.find(c)) != std::string::npos)
-    {
-        token = s.substr(0, pos);
-        result.push_back(token);
-        s.erase(0, pos + 1);
-    }
-    result.push_back(s);
-    return result;
-}
 
 vector<int> getNeededSpace(vector<string> fields)
 {
@@ -435,14 +951,6 @@ void updateOP(string query)
     remove(string(tablesDirectoryName + "/" + fields[0] + "/" + fields[0] + filesFormat).c_str());
     rename(string(tablesDirectoryName + "/" + fields[0] + "/" + "tmp" + filesFormat).c_str(), string(tablesDirectoryName + "/" + fields[0] + "/" + fields[0] + filesFormat).c_str());
 }
-
-void indexOP(string query)
-{
-    // fields[0] = nombre del indice, fields[1] = nombre de la tabla, fields[2] = nombre de la columna
-    vector<string> fields = processQuery(query, 5);
-    vector<int> colsSpaces = getSpacePerCol(fields[1]);
-}
-
 vector<string> getDataTypes(string tableName)
 {
     ifstream file(string(tablesDirectoryName + "/" + tableName + "/" + tableName + metadata + filesFormat).c_str());
@@ -468,6 +976,27 @@ vector<string> getDataTypes(string tableName)
     }
     return dataTypes;
 }
+
+
+
+
+void indexOP(string query)
+{
+    // fields[0] = nombre del indice, fields[1] = nombre de la tabla, fields[2] = nombre de la columna
+    vector<string> fields = processQuery(query, 5);
+    // 10,20,15
+    vector<int> colSpaces = getSpacePerCol(fields[1]);
+    //int,char,date
+    vector<string> colTypes = getDataTypes(fields[1]);
+    avl_tree<string> avl1;
+    get_datos(fields,colSpaces,avl1,colTypes);
+    cout<<"11111111111"<<endl;
+    avl1.inorder(avl1.root);
+    serialize(fields[0],fields[1],avl1.root);
+    fstream file("Tablas/"+fields[1]+"/"+fields[1]+"_metadata.txt",std::fstream::app);
+    file<<fields[0]<<";";
+}
+
 
 string fechaRandom()
 {
@@ -551,7 +1080,7 @@ void sgbd()
             {
                 updateOP(query);
             }
-            else if (queryPreProcessed.find("crear indice") != std::string::npos)
+            else if (queryPreProcessed.find("crea indice") != std::string::npos)
             {
                 indexOP(query);
             }
@@ -688,9 +1217,72 @@ void sgbd()
         }
     }
 }
+//select desde estudiante donde id=1;
+void select_index(string query)
+{
+    avl_tree<string> avl1;
+    node<int> *tmp1;
+    node<string> *tmp2;
 
+    vector<string> process = processQuery(query,2);
+    vector<string> col_types = getDataTypes(process[0]);
+    vector<int> p = getSpacePerCol(process[0]);
+    fstream file;
+    file.open("Tablas/"+process[0]+"/"+process[0]+".txt", fstream::in);
+    string tmp;
+    getline(file, tmp, ';');
+    file.close();
+    vector<string> col_names = split_Character(tmp,',');
+    int i = 0;
+    for(; i < col_names.size(); i++)
+    {
+        if(col_names[i]==process[1])
+            break;
+    }
+    //hola   ,jose   ,17
+    string tipo_dato = col_types[i];
+    string txt;
+    fstream file2;
+    file2.open("Tablas/"+process[0]+"/"+process[0]+"_metadata.txt", fstream::in);
+    string tmp3;
+    getline(file2, tmp3);
+    string idx = split_Character(tmp3,';')[3];
+    file2.close();
+    file2.open("Tablas/"+process[0]+"/"+idx+".txt", fstream::in);
+    getline(file2, txt);
+    avl1=Deserialize(avl1.root, txt);
+    avl1.inorder(avl1.root);
+    file2.close();
+    node<string> *c;
+    avl1.search_nod("enghm", c);
+    int s = c->pos.size();
+    file2.open("Tablas/"+process[0]+"/" + process[0] + ".txt");
+    string tmp4;
+    getline(file2,tmp4);
+    int pos_tmp = tmp4.find(";");
+    tmp4 = tmp4.substr(pos_tmp,tmp4.size()-1);
+    file2.close();
+    int peso = 0;
+    for(auto x: p)
+        peso = peso + x;
+    for(int i = 0; i < s; i++)
+    {
+        cout<<"indice: "<<c->pos[i]<<endl;
+        cout<<"registro obtenido <<<<"<<endl;
+        cout<<tmp4.substr(c->pos[i]+1, peso)<<endl;
+    }
+}
 int main()
 {
-    sgbd();
+    //sgbd();
+    // string query = "CREA INDICE IDX_30000 EN Estudiante.id";
+    // indexOP(query);
 
+    // avl_tree<int> tree;
+    // string ga ="943,58#56,0#5,232#-1#-1#-1#4444,116#3378,174#-1#-1#-1#";
+    // Deserialize(tree.root,ga);
+    select_index("select * desde estudiante donde ape > zwxpvb");
+    // string x = "abcde";
+    // if(x.find_first_of("fgh")!=std::string::npos)
+    //     cout<<"sdsd"<<endl;
 }
