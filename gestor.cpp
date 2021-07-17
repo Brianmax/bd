@@ -5,13 +5,30 @@
 #include <sstream>
 #include <windows.h>
 #include <limits>
+#include <typeinfo> 
+#include <chrono>
+using namespace std::chrono;
+
 using namespace std;
 
 const string tablesDirectoryName = "Tablas";
 const string metadata = "_metadata";
 const string filesFormat = ".txt";
 const char globalSplitter = ',';
-
+string remove_spaces(string str)
+{
+    int tam = str.size();
+    string tmp;
+    for (int i = 0; i < tam; i++)
+    {
+        if (str[i] == ' ')
+        {
+            continue;
+        }
+        tmp += str[i];
+    }
+    return tmp;
+}
 vector<string> split_Character(string s, char c)
 {
     vector<string> result;
@@ -51,6 +68,7 @@ struct avl_tree
     void update(vector<node<T> **> &arr, int t);
     void inorder(node<T> *n);
     void balanceo(node<T> **n);
+    bool search_nod(T d, node<T> *&pt);
 	node<T>** rplce(vector<node<T> **> &arr, node<T> **m);
     void remove(T d);
 };
@@ -78,8 +96,12 @@ void avl_tree<T>::balanceo(node<T> **n)
             a = (*n);
             b = ((*n)->ndes[1])->ndes[0];
             c = (*n)->ndes[1];
-            T t = c->data;
-            c->data = b->data; b->data = t;
+            T t;
+            vector<int> pos_tmp;
+            t = c->data;
+            pos_tmp = c->pos;
+            c->data = b->data; c->pos = b->pos; 
+            b->data = t; b->pos=pos_tmp;
             a->ndes[1] = b->ndes[0];
             b->ndes[0] = b->ndes[1]; b->ndes[1] = c->ndes[1];
             c->ndes[0] = a; c->ndes[1] = b;
@@ -116,8 +138,12 @@ void avl_tree<T>::balanceo(node<T> **n)
 			a = (*n);
 			c = (*n)->ndes[0];
 			b = ((*n)->ndes[0])->ndes[1];
-			T t; t = c->data;
-			c->data = b->data;
+			T t;
+            vector<int> pos_tmp;
+            t = c->data;
+            pos_tmp = c->pos;
+			c->data = b->data; c->pos = b->pos;
+            b->pos = pos_tmp;
 			b->data = t;
 			a->ndes[0] = b->ndes[1];
 			b->ndes[1] = b->ndes[0]; b->ndes[0] = c->ndes[0];
@@ -174,10 +200,21 @@ bool avl_tree<T>::find(T d, node<T> **&ptr, vector<node<T> **> &arr)
     for(ptr=&root; (*ptr)&&(*ptr)->data!=d;)
     {
         arr.push_back(ptr);
-        ptr=&(*ptr)->ndes[(*ptr)->data<d];
+        ptr=&(*ptr)->ndes[((*ptr)->data)<(d)];
     }
     return ((*ptr)!=0);
 }
+template<class T>
+
+bool avl_tree<T>::search_nod(T d, node<T> *&pt)
+{
+    for(pt=root; pt&&pt->data!=d;)
+    {
+        pt = pt->ndes[pt->data<d];
+    }
+    return pt!=0;
+}
+
 template<class T>
 void avl_tree<T>::insert(T d, int index)
 {
@@ -192,6 +229,7 @@ void avl_tree<T>::insert(T d, int index)
     (*pt)->pos.push_back(index);
     update(arr,1);
 }
+
 template<class T>
 node<T>** avl_tree<T>::rplce(vector<node<T> **> &arr, node<T> **m)
 {
@@ -229,38 +267,58 @@ void avl_tree<T>::inorder(node<T> *n)
         return;
     inorder(n->ndes[0]);
     int len = n->pos.size();
-    cout<<"key: "<<n->data<<endl;
+    cout<<"key: \n"<<n->data<<endl;
+    cout<<"Position(s): \n"<<endl;
     for(int i = 0; i < len; i++)
         cout<<n->pos[i]<<endl;
     inorder(n->ndes[1]);
+}
+node<string>* search_node(node<string> *r, string d)
+{
+
+    node<string> *g;
+    for(g=r; g&&g->data!=d;)
+    {
+
+        if(g->data==d)
+            return g;
+        else{    
+
+                stringstream tmp1(g->data);
+                stringstream tmp2(d);
+                int a,b;
+                tmp1<<a;
+                tmp2<<b;
+                if(a>b)
+                    g = g->ndes[0];
+                else
+                    g = g->ndes[1];
+            // }
+        }
+    }
+    return nullptr;
 }
 avl_tree<string> create_avl(vector<pair<string, int>> p)
 {
     avl_tree<string> avl1;
     int len = p.size();
     for(int i = 0; i < len; i++)
+    {   
         avl1.insert(p[i].first, p[i].second);
+    }
     return avl1;
 }
-avl_tree<int> create_avl_int(vector<pair<string, int>> p)
-{
-    avl_tree<int> avl1;
-    int len = p.size();
-    for(int i = 0; i < len; i++)
-        avl1.insert(stoi(p[i].first), p[i].second);
-    return avl1;
-}
+
+template<class T>
 void get_datos(vector<string> data, vector<int> p,
-avl_tree<string> &avl1, avl_tree<int> &avl2, vector<string> tipos)
+avl_tree<T> &avl1, vector<string> tipos)
 {
     ifstream fileTmp("Tablas/"+data[1]+"/"+data[1]+".txt");
     vector<string> n_colum;
     string n_columTmp;
     getline(fileTmp,n_columTmp,';');
-
     n_colum = split_Character(n_columTmp,',');
     fileTmp.close();
-
     ifstream file;
     file.open("Tablas/"+data[1]+"/"+data[1]+".txt");
     string output;
@@ -268,12 +326,13 @@ avl_tree<string> &avl1, avl_tree<int> &avl2, vector<string> tipos)
         file >> output;
     //cout<<output<<endl;
     file.close();
+    //{id,nombre,edad}
+    //{10,10,2}
     string columna = data[2];
     int first = output.find(";");
     int len = output.size();
     string datos = output.substr(first+1, len-1);
-    cout<<"datos<<< "<<datos<<endl;
-    int pos = 10;
+    int pos = 0;
     for(int i=0; i<n_colum.size(); i++)
     {
         if(n_colum[i]==data[2]){
@@ -281,8 +340,13 @@ avl_tree<string> &avl1, avl_tree<int> &avl2, vector<string> tipos)
             break;
         }
     }
+    int peso = 0;
+    for(int i = 0; i < pos; i++)
+    {
+        peso = peso + p[i];
+    }
+    peso = peso + pos;
     len = datos.size();
-    cout<<len<<" gaaaaaaaaa"<<endl;
     int index = 0;
     int f = 0;
     int k = n_colum.size();
@@ -296,29 +360,68 @@ avl_tree<string> &avl1, avl_tree<int> &avl2, vector<string> tipos)
             string ga = datos.substr(f,l);
             ga.erase(remove(ga.begin(), ga.end(), ' '), ga.end());
             tmp.first = ga;
-            tmp.second = f;
+            tmp.second = f-peso;
             elements.push_back(tmp);
-            cout<<"pos: "<<f<<endl;
-            cout<<datos[f]<<endl;
-            cout<<"|"<<ga<<"|"<<endl;
-            cout<<"------------------------------"<<endl;
         }
         f = f + p[index%k]+1;
         index++;
     }
-    if(tipos[pos]=="string")
-    {
-        avl1 = create_avl(elements);
-        cout<<"string"<<endl;
-        avl1.inorder(avl1.root);
-    }
-    else
-    {
-        avl2 = create_avl_int(elements);
-        cout<<"int"<<endl;
-        avl2.inorder(avl2.root);
-    }
+    avl1 = create_avl(elements);
+
 }
+vector<string> getDataTypes(string tableName)
+{
+    ifstream file(string(tablesDirectoryName + "/" + tableName + "/" + tableName + metadata + filesFormat).c_str());
+    string meta;
+    getline(file, meta, ';');
+    getline(file, meta, ';');
+    vector<string> dataTypes, tmp;
+    tmp = split_Character(meta, ',');
+    for (auto i : tmp)
+    {
+        if (i.find("int") != std::string::npos)
+        {
+            dataTypes.push_back("int");
+        }
+        else if (i.find("char") != std::string::npos)
+        {
+            dataTypes.push_back("char");
+        }
+        else if (i.find("date") != std::string::npos)
+        {
+            dataTypes.push_back("date");
+        }
+    }
+    return dataTypes;
+}
+
+void get_datos(string tabla,avl_tree<string> &avl)
+{
+    fstream file("Tablas/"+tabla+"/"+tabla+".txt");
+    string reg;
+    
+    vector<pair<string,int>> elements;
+
+    getline(file,reg,';');
+    pair<string,int> tmp;
+
+    int pfile = file.tellp();
+
+    string key;
+
+
+    while((pfile = file.tellp()) && getline(file,reg,';'))
+    {
+        key = remove_spaces(reg.substr(0,reg.find(",")));
+        elements.push_back(pair<string,int>(key,pfile)); 
+    }
+
+    avl = create_avl(elements);
+}
+
+
+
+
 template<class T>
 void UtilSerialize(node<T> *root, string index_name, string table_name, string &txt)
 {
@@ -327,7 +430,7 @@ void UtilSerialize(node<T> *root, string index_name, string table_name, string &
         txt = txt + "-1#";
         return;
     }
-    txt = txt + to_string(root->data)+",";
+    txt = txt + (root->data)+",";
     int len = root->pos.size();
     int i = 0;
     for(; i<len-1; i++)
@@ -345,31 +448,10 @@ void serialize(string index_name, string table_name, node<T> *root)
     string txt;
     file.open("Tablas/"+table_name+"/"+index_name+".txt");
     UtilSerialize(root, index_name, table_name, txt);
-    cout<<txt<<endl;
     file << txt;
     file.close();
 }
 
-template<class T>
-void UtilDeSerialize_int(node<T> *&root, string &txt)
-{
-    string tmp;
-    tmp  = txt.substr(0,txt.find("#"));
-    txt = txt.substr(tmp.size()+1);
-    vector<string> posi;
-    posi = split_Character(tmp, ',');
-    for(auto x: posi)
-        cout<<"posi: "<<x<<endl;
-    cout<<"------------------------"<<endl;
-    if(posi[0]=="-1")
-        return;
-    root = new node<T>(stoi(posi[0]));
-    int len = posi.size();
-    for(int i = 1; i < len; i++)
-        root->pos.push_back(stoi(posi[i]));
-    UtilDeSerialize_int(root->ndes[0], txt);
-    UtilDeSerialize_int(root->ndes[1], txt);
-}
 template<class T>
 void UtilDeSerialize(node<T> *&root, string &txt)
 {
@@ -378,9 +460,7 @@ void UtilDeSerialize(node<T> *&root, string &txt)
     txt = txt.substr(tmp.size()+1);
     vector<string> posi;
     posi = split_Character(tmp, ',');
-    for(auto x: posi)
-        cout<<"posi: "<<x<<endl;
-    cout<<"------------------------"<<endl;
+   
     if(posi[0]=="-1")
         return;
     root = new node<T>(posi[0]);
@@ -391,83 +471,14 @@ void UtilDeSerialize(node<T> *&root, string &txt)
     UtilDeSerialize(root->ndes[1], txt);
 }
 template<class T>
-void Deserialize_int(node<T> *&root, string &txt)
+avl_tree<string> Deserialize(node<T> *&root, string &txt)
 {
-    avl_tree<int> tree; 
-    UtilDeSerialize_int(tree.root,txt);
-    tree.inorder(tree.root);
+    avl_tree<string> tree; 
+    UtilDeSerialize(tree.root,txt);
+    // tree.inorder(tree.root);
+    return tree;
 }
-// template<class T>
-// void Deserialize_string(node<T> *&root, string &txt)
-// {
-//     avl_tree<int> tree; 
-//     UtilDeSerialize_int(tree.root,txt);
-//     tree.inorder(tree.root);
-// }
-// int main(){
-//     vector<string> data;
-//     vector<int> d;
-//     vector<string> h;
-//     vector<string> n_colum;
-//     vector<string> tipos;
-//     n_colum.push_back("ID_est");
-//     n_colum.push_back("nom");
-//     n_colum.push_back("ape");
-//     n_colum.push_back("edad");
-//     n_colum.push_back("fecnac");
-//     data.push_back("IDX_80000");
-//     data.push_back("tabla1");
-//     data.push_back("fecnac");
-//     d.push_back(12);
-//     d.push_back(30);
-//     d.push_back(30);
-//     d.push_back(12);
-//     d.push_back(10);
-//     h.push_back("int");
-//     h.push_back("string");
-//     h.push_back("string");
-//     h.push_back("string");
-//     h.push_back("int");
-//     h.push_back("string");
-//     tipos.push_back("int");
-//     tipos.push_back("string");
-//     tipos.push_back("string");
-//     tipos.push_back("int");
-//     tipos.push_back("string");
-//     avl_tree<string> avl1;
-//     avl_tree<int> avl2;
-//     vector<pair<string, int>> gaaaaa;
-//     gaaaaa = get_datos(data, d, n_colum, avl1, avl2, tipos);
-//     // int len = gaaaaa.size();
-//     // cout<<"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"<<endl;
-//     // for(int i = 0; i<len; i++)
-//     //     cout<<gaaaaa[i].first<<"    "<<gaaaaa[i].second<<endl;
-//     cout<<"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"<<endl;
-//     //avl1.inorder(avl1.root);
-//     //serialize("index_1", "estudiante", avl1.root);
-//     string txt;
-//     UtilSerialize(avl1.root, "index_1", "tabla1", txt);
-//     avl_tree<string> avl3;
-//     UtilDeSerialize(avl3.root, txt);
-//     cout<<"avl"<<endl;
-//     avl3.inorder(avl3.root);
-//     return 0;
-// }
 
-string remove_spaces(string str)
-{
-    int tam = str.size();
-    string tmp;
-    for (int i = 0; i < tam; i++)
-    {
-        if (str[i] == ' ')
-        {
-            continue;
-        }
-        tmp += str[i];
-    }
-    return tmp;
-}
 string remove_character(string str, char remChar)
 {
     int tam = str.size();
@@ -652,7 +663,29 @@ vector<int> getSpacePerCol(string tableName)
     }
     return tmp_int;
 }
-
+bool indexInTable(string tableName)
+{
+    ifstream file("Tablas/"+tableName+"/"+tableName+"_metadata.txt");
+    int i = 0;
+    string tmp;
+    while(getline(file,tmp,';'))
+    {
+        i++;
+    }
+    return i>3;
+}
+bool indexInTable(string tableName,string &indexName)
+{
+    ifstream file("Tablas/"+tableName+"/"+tableName+"_metadata.txt");
+    int i = 0;
+    string tmp;
+    while(getline(file,tmp,';'))
+    {
+        indexName = tmp;
+        i++;
+    }
+    return i>3;
+}
 void insertOP(string query)
 {
     //obtenemos el nombre del la tabla y las columnas
@@ -688,6 +721,16 @@ void insertOP(string query)
 
     file << registerTmp;
     file.close();
+    string indexName;
+    if(indexInTable(fields[0],indexName))
+    {
+        vector<int> colSpaces = getSpacePerCol(fields[0]);
+        vector<string> colTypes = getDataTypes(fields[0]);
+        avl_tree<string> avl1;
+        get_datos(fields[0],avl1);
+        // get_datos(fields,colSpaces,avl1,colTypes);
+        serialize(indexName,fields[0],avl1.root);
+    }
 }
 
 bool operationsCondition(string a, string b, string condition)
@@ -709,14 +752,24 @@ bool operationsCondition(string a, string b, string condition)
 }
 
 void selectOP(string query)
-{
+{   
+    auto start = high_resolution_clock::now();
     vector<string> fields = processQuery(query, 2);
+
+    cout<<"Seleccion sin indice"<<endl;
     ifstream file;
     file.open(string(tablesDirectoryName + "/" + fields[0] + "/" + fields[0] + filesFormat).c_str());
     string tablefields;
     getline(file, tablefields, ';');
 
     cout << tablefields << endl;
+    int tamFields = tablefields.size();
+    for(int i = 0;i<tamFields;i++)
+    {
+        cout<<"-";
+    }
+    cout<<endl;
+
     int tmp = tablefields.find(fields[1]);
     int nField = 0;
     for (int i = 0; i < tmp; i++)
@@ -728,9 +781,9 @@ void selectOP(string query)
     int returnedLines = 0;
     //lee linea por linea, delimitando por ; de modo que line obtiene un registro tratable
     while (getline(file, line, ';'))
-    {
-        line = remove_spaces(line);
-        vector<string> registerTmp = split_Character(line, ',');
+    {   
+        string tmpline = remove_spaces(line);
+        vector<string> registerTmp = split_Character(tmpline, ',');
 
         if (operationsCondition(registerTmp[nField], fields[3], fields[2]))
         {
@@ -738,7 +791,10 @@ void selectOP(string query)
             returnedLines++;
         }
     }
-    cout << "Registros devueltos : " << returnedLines << endl;
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<milliseconds>(stop - start);
+
+    cout << "Todo ha salido bien, registros devueltos: " << returnedLines <<", " <<duration.count()<< " milisegundos." << endl;
 }
 void deleteOP(string query)
 {
@@ -781,11 +837,26 @@ void deleteOP(string query)
             deletedLines++;
         }
     }
-    cout << "Registros borrados : " << deletedLines << endl;
     file.close();
     file_tmp.close();
     remove(string(tablesDirectoryName + "/" + fields[0] + "/" + fields[0] + filesFormat).c_str());
     rename(string(tablesDirectoryName + "/" + fields[0] + "/" + "tmp" + filesFormat).c_str(), string(tablesDirectoryName + "/" + fields[0] + "/" + fields[0] + filesFormat).c_str());
+    string indexName;
+    if(indexInTable(fields[0],indexName))
+    {
+        vector<int> colSpaces = getSpacePerCol(fields[0]);
+        vector<string> colTypes = getDataTypes(fields[0]);
+        avl_tree<string> avl1;
+        // get_datos(fields,colSpaces,avl1,colTypes);
+
+        get_datos(fields[0],avl1);
+        serialize(indexName,fields[0],avl1.root);
+        cout<<endl<<"Arbol Actualizado"<<endl;
+        cout << "Registros borrados : " << deletedLines << endl;
+    }
+    else{
+        cout << "Registros borrados : " << deletedLines << endl;
+    }
 }
 // string query5 = "MODIFICAR Estudiante(0) SET nom(1) = 'Rensso'(2) DONDE id_est(3) <(4) 1(5)";
 // ID_est-int(12), nom-char(30), ape-char(30), edad-int(12), fecnac-date
@@ -863,31 +934,6 @@ void updateOP(string query)
     remove(string(tablesDirectoryName + "/" + fields[0] + "/" + fields[0] + filesFormat).c_str());
     rename(string(tablesDirectoryName + "/" + fields[0] + "/" + "tmp" + filesFormat).c_str(), string(tablesDirectoryName + "/" + fields[0] + "/" + fields[0] + filesFormat).c_str());
 }
-vector<string> getDataTypes(string tableName)
-{
-    ifstream file(string(tablesDirectoryName + "/" + tableName + "/" + tableName + metadata + filesFormat).c_str());
-    string meta;
-    getline(file, meta, ';');
-    getline(file, meta, ';');
-    vector<string> dataTypes, tmp;
-    tmp = split_Character(meta, ',');
-    for (auto i : tmp)
-    {
-        if (i.find("int") != std::string::npos)
-        {
-            dataTypes.push_back("int");
-        }
-        else if (i.find("char") != std::string::npos)
-        {
-            dataTypes.push_back("char");
-        }
-        else if (i.find("date") != std::string::npos)
-        {
-            dataTypes.push_back("date");
-        }
-    }
-    return dataTypes;
-}
 
 
 
@@ -896,14 +942,10 @@ void indexOP(string query)
 {
     // fields[0] = nombre del indice, fields[1] = nombre de la tabla, fields[2] = nombre de la columna
     vector<string> fields = processQuery(query, 5);
-    // 10,20,15
-    vector<int> colSpaces = getSpacePerCol(fields[1]);
-    //int,char,date
-    vector<string> colTypes = getDataTypes(fields[1]);
 
-    avl_tree<int> avl1;
-    avl_tree<string> avl2;
-    get_datos(fields,colSpaces,avl2,avl1,colTypes);
+    avl_tree<string> avl1;
+
+    get_datos(fields[1],avl1);
     serialize(fields[0],fields[1],avl1.root);
 
     fstream file("Tablas/"+fields[1]+"/"+fields[1]+"_metadata.txt",std::fstream::app);
@@ -940,6 +982,113 @@ string cadenaRandom(int tam, string abc)
 }
 
 
+void writeFromFile(string tableName, vector<int> positions)
+{
+    fstream table;
+    table.open("Tablas/"+tableName+"/"+tableName+".txt",fstream::in);
+    string tmp;
+    getline(table,tmp,';');
+    cout<<tmp<<endl;
+    int tamColsName = tmp.size();
+    for(int i = 0;i<tamColsName;i++)
+    {
+        cout<<"-";
+    }
+    cout<<endl;
+    int tam = positions.size();
+    for(int i= 0;i<tam;i++)
+    {
+        string reg;
+        table.seekp(positions[i]);
+        getline(table,reg,';');
+        cout<<reg<<endl;
+    }
+    cout<<'\n';
+}
+
+//select desde estudiante donde id=1;
+void select_index(string query)
+{
+    auto start = high_resolution_clock::now();
+    
+    avl_tree<string> avl1;
+    node<int> *tmp1;
+    node<string> *tmp2;
+
+    vector<string> process = processQuery(query,2);
+    vector<string> col_types = getDataTypes(process[0]);
+    vector<int> p = getSpacePerCol(process[0]);
+
+    fstream file;
+    file.open("Tablas/"+process[0]+"/"+process[0]+".txt", fstream::in);
+    string tmp;
+    getline(file, tmp, ';');
+    file.close();
+    vector<string> col_names = split_Character(tmp,',');
+    int i = 0;
+    for(; i < col_names.size(); i++)
+    {
+        if(col_names[i]==process[1])
+            break;
+    }
+
+    //hola   ,jose   ,17
+    string tipo_dato = col_types[i];
+    string txt;
+    fstream file2;
+
+    file2.open("Tablas/"+process[0]+"/"+process[0]+"_metadata.txt", fstream::in);
+    string tmp3;
+    getline(file2, tmp3);
+
+    string idx = split_Character(tmp3,';')[3];
+    file2.close();
+
+    file2.open("Tablas/"+process[0]+"/"+idx+".txt", fstream::in);
+    getline(file2, txt);
+
+    avl1=Deserialize(avl1.root, txt);
+    //avl1.inorder(avl1.root);
+
+    file2.close();
+
+    node<string> *c;
+    avl1.search_nod(process[3], c);
+
+
+    int nPositions = c->pos.size();
+    cout<<"Seleccion con indice"<<"\n\n";
+
+    //write from file 
+    fstream table;
+    table.open("Tablas/"+process[0]+"/"+process[0]+".txt",fstream::in);
+    string tmp4;
+    getline(table,tmp4,';');
+    cout<<tmp4<<endl;
+
+    int tamColsName = tmp4.size();
+    for(int i = 0;i<tamColsName;i++)
+    {
+        cout<<"-";
+    }
+    cout<<endl;
+    int tam = c->pos.size();
+    for(int i= 0;i<tam;i++)
+    {
+        string reg;
+        table.seekp(c->pos[i]);
+        getline(table,reg,';');
+        cout<<reg<<endl;
+    }
+    cout<<'\n';
+    
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<milliseconds>(stop - start);
+
+    cout << "Todo ha salido bien, registros devueltos: " << nPositions <<", " <<duration.count()<< " milisegundos." << endl;
+}
+
+
 // Sistema Gestor de Bases de Datos (SGBD)
 void sgbd()
 {
@@ -948,7 +1097,7 @@ void sgbd()
     for (int i = 0; i < 120; i++)
         cout << "-";
     cout << "\n";
-    cout << "SGBD: Donut v0.1" << endl;
+    cout << "SGBD: Donut v0.1"  << endl;
     cout << "\n";
     string query;
     while (query.compare("exit") != 0)
@@ -973,7 +1122,13 @@ void sgbd()
                  { c = ::tolower(c); });
         if (query.compare("exit") != 0)
         {
-            if (queryPreProcessed.find("crear tabla") != std::string::npos)
+            if (queryPreProcessed.find("donut --version") != std::string::npos)
+            {
+                    cout << "SGBD: Donut v0.1" << endl;
+                    cout << "Intregrantes:"<<endl;
+                    cout<< "    Brian, Elias, Rafael"<<endl;
+            }
+            else if (queryPreProcessed.find("crear tabla") != std::string::npos)
             {
                 createOP(query);
             }
@@ -987,7 +1142,14 @@ void sgbd()
             }
             else if (queryPreProcessed.find("select") != std::string::npos)
             {
-                selectOP(query);
+                vector<string> tmp = processQuery(query,2);
+                if(indexInTable(tmp[0]))
+                {
+                    select_index(query);
+                }
+                else{
+                    selectOP(query);
+                }
             }
             else if (queryPreProcessed.find("modificar") != std::string::npos)
             {
@@ -996,6 +1158,10 @@ void sgbd()
             else if (queryPreProcessed.find("crea indice") != std::string::npos)
             {
                 indexOP(query);
+            }
+            else if (queryPreProcessed.find("restart")!=std::string::npos)
+            {
+                system(".\\run.bat");
             }
             else if (query.substr(0, 6).compare("random") == 0)
             {
@@ -1028,7 +1194,6 @@ void sgbd()
                         }
                         insertion.pop_back();
                         insertion += ")";
-                        cout << insertion << endl;
                         insertOP(insertion);
                     }
                 }
@@ -1084,6 +1249,48 @@ void sgbd()
                     cout << "Comando incorrecto, intente nuevamente" << endl;
                 }
             }
+            else if (query.substr(0, 5).compare("field") == 0)
+            {
+                if (query.size() > 7)
+                {
+                    vector<string> tmp = split_Character(query, ' ');
+                    vector<int> colsSpaces = getSpacePerCol(tmp[1]);
+                    vector<string> colsTypes = getDataTypes(tmp[1]);
+                    int nRegs = stoi(tmp[2]);
+                    int nCols = colsSpaces.size();
+                    string insertion;
+                    for (int i = 0; i < nRegs; i++)
+                    {
+                        insertion = "insertar " + tmp[1] + " (";
+                        for (int j = 0; j < nCols; j++)
+                        {
+                            if (colsTypes[j] == "int")
+                            {
+                                //insertion += cadenaRandom(colsSpaces[j], "123456789");
+                                insertion = insertion + to_string(i);
+                            }
+                            else if (colsTypes[j] == "char")
+                            {
+                                //insertion += cadenaRandom(colsSpaces[j], "abcdefghijklmnopqrstuvwxyz");
+                                insertion = insertion + "nombre" + to_string(i);
+                            }
+                            else
+                            {
+                                insertion += fechaRandom();
+                            }
+                            insertion += ",";
+                        }
+                        insertion.pop_back();
+                        insertion += ")";
+                        insertOP(insertion);
+                    }
+                }
+                
+                else
+                {
+                    cout << "Comando incorrecto, intente nuevamente" << endl;
+                }
+            }
             else if (query.substr(0, 2).compare("ls") == 0)
             {
                 ofstream file;
@@ -1107,14 +1314,15 @@ void sgbd()
                 cout << "     INSERTAR nombre_tabla (dato1,dato2)" << endl;
                 cout << "     SELECT * DESDE nombre_tabla DONDE campo1 = dato1" << endl;
                 cout << "     BORRAR DESDE nombre_tabla DONDE campo1 = dato1" << endl;
-                cout << "     MODIFICAR nombre_tabla SET campo1 = dato1 DONDE campo2 = dato2\n"
-                     << endl;
+                cout << "     MODIFICAR nombre_tabla SET campo1 = dato1 DONDE campo2 = dato2"<<endl;
+                cout << "     CREA INDICE idx EN nombre_tabla.campo1"<<"\n"<< endl;
 
                 cout << "Comandos Donut utiles en varias situaciones:" << endl;
                 cout << "     ls                              Muestra las tablas" << endl;
                 cout << "     start <tabla>                   Abre el archivo txt de la tabla deseada" << endl;
                 cout << "     copy  <tabla1> <tabla2>         Copia el contenido de una tabla a otra" << endl;
-                cout << "     random <tabla> <nroRegistros>   Llenar la tabla de datos random" << endl;
+                cout << "     random <tabla> <nroRegistros>   Llena la tabla de datos random" << endl;
+                cout << "     field                           Llena la tabla de datos ordenados" << endl;
                 cout << "     exit                            Salir del programa\n"
                      << endl;
             }
@@ -1131,13 +1339,26 @@ void sgbd()
     }
 }
 
+
+
 int main()
 {
     sgbd();
-    // string query = "CREA INDICE IDX_30000 EN Estudiante.id";
+    // avl_tree<string> a;
+    // get_datos("tb",a);
+    
+    //string query = "CREA INDICE idx EN estudiante.id";
     // indexOP(query);
+    // avl_tree<string> avl;
 
-    // avl_tree<int> tree;
+    // get_datos("estudiante",avl);
+
+    // avl.inorder(avl.root);  
+        // avl_tree<int> tree;
     // string ga ="943,58#56,0#5,232#-1#-1#-1#4444,116#3378,174#-1#-1#-1#";
-    // Deserialize_int(tree.root,ga);
+    // Deserialize(tree.root,ga);
+    //select_index("select * desde estudiante donde id = 2");
+    // string x = "abcde";
+    // if(x.find_first_of("fgh")!=std::string::npos)
+    //     cout<<"sdsd"<<endl;
 }
